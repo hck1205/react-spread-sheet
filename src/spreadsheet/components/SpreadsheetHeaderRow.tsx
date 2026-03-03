@@ -11,11 +11,13 @@ export interface SpreadsheetHeaderRowProps {
   totalGridWidth: number;
   scrollLeft: number;
   columnCount: number;
-  defaultColumnWidth: number;
+  columnWidthsByIndex: number[];
+  columnOffsets: number[];
   selectedColSet: Set<number>;
   onSelectAllMouseDown: (event: React.MouseEvent<HTMLDivElement>) => void;
   onColumnHeaderMouseDown: (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   onColumnHeaderMouseEnter: (colIndex: number) => void;
+  onColumnResizeMouseDown: (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -35,11 +37,13 @@ export function SpreadsheetHeaderRow({
   totalGridWidth,
   scrollLeft,
   columnCount,
-  defaultColumnWidth,
+  columnWidthsByIndex,
+  columnOffsets,
   selectedColSet,
   onSelectAllMouseDown,
   onColumnHeaderMouseDown,
-  onColumnHeaderMouseEnter
+  onColumnHeaderMouseEnter,
+  onColumnResizeMouseDown
 }: SpreadsheetHeaderRowProps) {
   return (
     <div className={SHEET_CLASSNAME.HEADER_ROW} style={{ borderBottomColor: SHEET_COLOR.HEADER_BORDER }}>
@@ -55,7 +59,9 @@ export function SpreadsheetHeaderRow({
           className={SHEET_CLASSNAME.HEADER_COLS}
           style={{
             width: totalGridWidth,
-            transform: `translateX(-${scrollLeft}px)`
+            height: defaultRowHeight,
+            transform: `translateX(-${scrollLeft}px)`,
+            position: 'relative'
           }}
         >
           {Array.from({ length: columnCount }).map((_, colIndex) => {
@@ -68,7 +74,9 @@ export function SpreadsheetHeaderRow({
                 onMouseDown={(event) => onColumnHeaderMouseDown(colIndex, event)}
                 onMouseEnter={() => onColumnHeaderMouseEnter(colIndex)}
                 style={{
-                  width: defaultColumnWidth,
+                  position: 'absolute',
+                  left: columnOffsets[colIndex] ?? colIndex * 120,
+                  width: columnWidthsByIndex[colIndex] ?? 120,
                   height: defaultRowHeight,
                   lineHeight: `${defaultRowHeight}px`,
                   cursor: 'pointer',
@@ -79,6 +87,10 @@ export function SpreadsheetHeaderRow({
                 }}
               >
                 {columnIndexToLabel(colIndex)}
+                <div
+                  className={SHEET_CLASSNAME.HEADER_RESIZE_HANDLE}
+                  onMouseDown={(event) => onColumnResizeMouseDown(colIndex, event)}
+                />
               </div>
             );
           })}

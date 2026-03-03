@@ -60,6 +60,7 @@ export function SpreadSheetGrid(props: SpreadsheetProps) {
           onSelectAllMouseDown={controller.handleSelectAllMouseDown}
           onColumnHeaderMouseDown={controller.handleColumnHeaderMouseDown}
           onColumnHeaderMouseEnter={controller.handleColumnHeaderMouseEnter}
+          onColumnResizeMouseDown={controller.handleColumnResizeMouseDown}
           totalGridWidth={controller.totalGridWidth}
           contentWidth={controller.contentWidth}
           totalGridHeight={controller.totalGridHeight}
@@ -68,7 +69,10 @@ export function SpreadSheetGrid(props: SpreadsheetProps) {
           renderRowTitle={controller.renderRowTitle}
           rowHeaderWidth={controller.rowHeaderWidth}
           defaultRowHeight={controller.defaultRowHeight}
-          defaultColumnWidth={controller.defaultColumnWidth}
+          columnWidthsByIndex={controller.columnWidthsByIndex}
+          rowHeightsByIndex={controller.rowHeightsByIndex}
+          columnOffsets={controller.columnOffsets}
+          rowOffsets={controller.rowOffsets}
           dataState={controller.dataState}
           selectedRowSet={controller.selectedRowSet}
           selectionOverlayRects={controller.selectionOverlayRects}
@@ -83,6 +87,7 @@ export function SpreadSheetGrid(props: SpreadsheetProps) {
           onEditingInputBlur={controller.handleEditingInputBlur}
           onRowHeaderMouseDown={controller.handleRowHeaderMouseDown}
           onRowHeaderMouseEnter={controller.handleRowHeaderMouseEnter}
+          onRowResizeMouseDown={controller.handleRowResizeMouseDown}
         />
       </div>
     </div>
