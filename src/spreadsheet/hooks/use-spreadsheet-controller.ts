@@ -40,6 +40,10 @@ export interface SpreadsheetController {
   selectedColSet: Set<number>;
   selectionOverlayRects: ReturnType<typeof useGridDerivedState>['selectionOverlayRects'];
   activeCellRect: ReturnType<typeof useGridDerivedState>['activeCellRect'];
+  columnWidthsByIndex: number[];
+  rowHeightsByIndex: number[];
+  columnOffsets: number[];
+  rowOffsets: number[];
   formulaValue: string;
   editingDraftValue: string;
   viewportHeight: number;
@@ -59,6 +63,8 @@ export interface SpreadsheetController {
   handleColumnHeaderMouseEnter: (colIndex: number) => void;
   handleRowHeaderMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   handleRowHeaderMouseEnter: (rowIndex: number) => void;
+  handleColumnResizeMouseDown: (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
+  handleRowResizeMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   handleEditingInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleEditingInputCompositionStart: () => void;
   handleEditingInputCompositionEnd: () => void;
@@ -115,6 +121,8 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     primaryIndex: 0
   });
   const [editing, setEditing] = useState<EditingState | null>(null);
+  const [columnWidths, setColumnWidths] = useState<Record<number, number>>({});
+  const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
   const activeCellRef = useRef<CellCoordinate>(activeCell);
   const selectionStateRef = useRef<SelectionState>(selectionState);
   const headerDragRef = useRef<{ type: 'row' | 'column'; anchorIndex: number } | null>(null);
@@ -122,6 +130,11 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const gridFocusRef = useRef<HTMLDivElement | null>(null);
+  const resizeDragRef = useRef<
+    | { type: 'column'; index: number; startClient: number; startSize: number }
+    | { type: 'row'; index: number; startClient: number; startSize: number }
+    | null
+  >(null);
   const composingRef = useRef(false);
   const editingDraftRef = useRef('');
   const editingInputRef = useRef<HTMLInputElement | null>(null);
@@ -164,6 +177,8 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
       primaryIndex: 0
     });
     setEditing(null);
+    setColumnWidths({});
+    setRowHeights({});
   }, [initialDataState]);
 
   const { scrollTop, scrollLeft, dynamicBufferPx, handleScroll } = useGridScroll({
@@ -184,7 +199,11 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     selectedRowSet,
     selectedColSet,
     selectionOverlayRects,
-    activeCellRect
+    activeCellRect,
+    columnWidthsByIndex,
+    rowHeightsByIndex,
+    columnOffsets,
+    rowOffsets
   } = useGridDerivedState({
     dataState,
     rowHeaderWidth,
@@ -194,7 +213,9 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     scrollTop,
     dynamicBufferPx,
     selectionRanges: selectionState.ranges,
-    activeCell
+    activeCell,
+    columnWidths,
+    rowHeights
   });
 
   const ensureCellInView = (cell: CellCoordinate) => {
@@ -203,16 +224,16 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
       return;
     }
 
-    const cellTop = cell.rowIndex * defaultRowHeight;
-    const cellBottom = cellTop + defaultRowHeight;
+    const cellTop = rowOffsets[cell.rowIndex] ?? cell.rowIndex * defaultRowHeight;
+    const cellBottom = rowOffsets[cell.rowIndex + 1] ?? cellTop + defaultRowHeight;
     if (cellTop < container.scrollTop) {
       container.scrollTop = cellTop;
     } else if (cellBottom > container.scrollTop + container.clientHeight) {
       container.scrollTop = cellBottom - container.clientHeight;
     }
 
-    const cellLeft = rowHeaderWidth + cell.colIndex * defaultColumnWidth;
-    const cellRight = cellLeft + defaultColumnWidth;
+    const cellLeft = rowHeaderWidth + (columnOffsets[cell.colIndex] ?? cell.colIndex * defaultColumnWidth);
+    const cellRight = rowHeaderWidth + (columnOffsets[cell.colIndex + 1] ?? cellLeft + defaultColumnWidth);
     if (cellLeft < container.scrollLeft) {
       container.scrollLeft = cellLeft;
     } else if (cellRight > container.scrollLeft + container.clientWidth) {
@@ -490,6 +511,28 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     startEdit(cell);
   };
 
+  const handleColumnResizeMouseDown = (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resizeDragRef.current = {
+      type: 'column',
+      index: colIndex,
+      startClient: event.clientX,
+      startSize: columnWidthsByIndex[colIndex] ?? defaultColumnWidth
+    };
+  };
+
+  const handleRowResizeMouseDown = (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    resizeDragRef.current = {
+      type: 'row',
+      index: rowIndex,
+      startClient: event.clientY,
+      startSize: rowHeightsByIndex[rowIndex] ?? defaultRowHeight
+    };
+  };
+
   const handleEditingInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     editingDraftRef.current = event.target.value;
     if (editing?.error) {
@@ -673,6 +716,20 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     };
 
     const onMouseMove = (event: MouseEvent) => {
+      const resize = resizeDragRef.current;
+      if (resize) {
+        if (resize.type === 'column') {
+          const delta = event.clientX - resize.startClient;
+          const next = Math.max(40, resize.startSize + delta);
+          setColumnWidths((prev) => ({ ...prev, [resize.index]: next }));
+        } else {
+          const delta = event.clientY - resize.startClient;
+          const next = Math.max(20, resize.startSize + delta);
+          setRowHeights((prev) => ({ ...prev, [resize.index]: next }));
+        }
+        return;
+      }
+
       const drag = headerDragRef.current;
       if (!drag) {
         return;
@@ -692,7 +749,11 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
           return;
         }
         const bodyX = localX - rowHeaderWidth;
-        const colIndex = clamp(Math.floor(bodyX / defaultColumnWidth), 0, dataState.cols - 1);
+        const colIndex = clamp(
+          columnOffsets.findIndex((offset, index) => index < columnOffsets.length - 1 && bodyX >= offset && bodyX < (columnOffsets[index + 1] ?? 0)),
+          0,
+          dataState.cols - 1
+        );
         updateColumnDragByPointer(colIndex);
         return;
       }
@@ -700,11 +761,16 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
       if (!renderRowTitle) {
         return;
       }
-      const rowIndex = clamp(Math.floor(localY / defaultRowHeight), 0, dataState.rows - 1);
+      const rowIndex = clamp(
+        rowOffsets.findIndex((offset, index) => index < rowOffsets.length - 1 && localY >= offset && localY < (rowOffsets[index + 1] ?? 0)),
+        0,
+        dataState.rows - 1
+      );
       updateRowDragByPointer(rowIndex);
     };
 
     const onMouseUp = () => {
+      resizeDragRef.current = null;
       headerDragRef.current = null;
       lastHeaderDragIndexRef.current = null;
     };
@@ -715,7 +781,19 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [applyActiveCell, applySelectionState, dataState.cols, dataState.rows, defaultColumnWidth, defaultRowHeight, rowHeaderWidth]);
+  }, [
+    applyActiveCell,
+    applySelectionState,
+    columnOffsets,
+    dataState.cols,
+    dataState.rows,
+    defaultColumnWidth,
+    defaultRowHeight,
+    renderColumnTitle,
+    renderRowTitle,
+    rowHeaderWidth,
+    rowOffsets
+  ]);
 
   return {
     dataState,
@@ -737,6 +815,10 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     selectedColSet,
     selectionOverlayRects,
     activeCellRect,
+    columnWidthsByIndex,
+    rowHeightsByIndex,
+    columnOffsets,
+    rowOffsets,
     formulaValue: editing ? editingDraftRef.current : getCellValue(dataState, activeCell),
     editingDraftValue: editingDraftRef.current,
     viewportHeight,
@@ -756,6 +838,8 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     handleColumnHeaderMouseEnter,
     handleRowHeaderMouseDown,
     handleRowHeaderMouseEnter,
+    handleColumnResizeMouseDown,
+    handleRowResizeMouseDown,
     handleEditingInputChange,
     handleEditingInputCompositionStart,
     handleEditingInputCompositionEnd,

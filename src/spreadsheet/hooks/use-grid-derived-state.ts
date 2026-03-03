@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import type { CellCoordinate, DataState } from '../../core';
-import { buildSelectionOverlayRects } from '../selection-overlay';
 import { buildSelectionDerivedState } from '../selection-view';
+import { normalizeRange } from '../selection';
 import type { SelectionRange } from '../types';
-import { getVisibleRowWindow } from '../virtualization';
 
 /**
  * 셀 또는 범위 오버레이의 픽셀 사각형 좌표입니다.
@@ -28,6 +27,8 @@ export interface UseGridDerivedStateOptions {
   dynamicBufferPx: number;
   selectionRanges: SelectionRange[];
   activeCell: CellCoordinate;
+  columnWidths?: Record<number, number>;
+  rowHeights?: Record<number, number>;
 }
 
 /**
@@ -43,6 +44,10 @@ export interface UseGridDerivedStateResult {
   selectedColSet: Set<number>;
   selectionOverlayRects: GridCellRect[];
   activeCellRect: GridCellRect;
+  columnWidthsByIndex: number[];
+  rowHeightsByIndex: number[];
+  columnOffsets: number[];
+  rowOffsets: number[];
 }
 
 /**
@@ -65,24 +70,68 @@ export const useGridDerivedState = (options: UseGridDerivedStateOptions): UseGri
     scrollTop,
     dynamicBufferPx,
     selectionRanges,
-    activeCell
+    activeCell,
+    columnWidths = {},
+    rowHeights = {}
   } = options;
 
-  const totalGridWidth = dataState.cols * defaultColumnWidth;
-  const totalGridHeight = dataState.rows * defaultRowHeight;
+  const columnWidthsByIndex = useMemo(
+    () =>
+      Array.from({ length: dataState.cols }, (_, index) => {
+        const value = columnWidths[index];
+        return typeof value === 'number' ? Math.max(40, value) : defaultColumnWidth;
+      }),
+    [columnWidths, dataState.cols, defaultColumnWidth]
+  );
+
+  const rowHeightsByIndex = useMemo(
+    () =>
+      Array.from({ length: dataState.rows }, (_, index) => {
+        const value = rowHeights[index];
+        return typeof value === 'number' ? Math.max(20, value) : defaultRowHeight;
+      }),
+    [dataState.rows, defaultRowHeight, rowHeights]
+  );
+
+  const columnOffsets = useMemo(() => {
+    const offsets = Array.from({ length: columnWidthsByIndex.length + 1 }, () => 0);
+    for (let index = 0; index < columnWidthsByIndex.length; index += 1) {
+      offsets[index + 1] = offsets[index] + columnWidthsByIndex[index];
+    }
+    return offsets;
+  }, [columnWidthsByIndex]);
+
+  const rowOffsets = useMemo(() => {
+    const offsets = Array.from({ length: rowHeightsByIndex.length + 1 }, () => 0);
+    for (let index = 0; index < rowHeightsByIndex.length; index += 1) {
+      offsets[index + 1] = offsets[index] + rowHeightsByIndex[index];
+    }
+    return offsets;
+  }, [rowHeightsByIndex]);
+
+  const totalGridWidth = columnOffsets[columnOffsets.length - 1] ?? 0;
+  const totalGridHeight = rowOffsets[rowOffsets.length - 1] ?? 0;
   const contentWidth = rowHeaderWidth + totalGridWidth;
 
-  const { visibleRows } = useMemo(
-    () =>
-      getVisibleRowWindow({
-        rowCount: dataState.rows,
-        rowHeight: defaultRowHeight,
-        viewportHeight,
-        scrollTop,
-        bufferPx: dynamicBufferPx
-      }),
-    [dataState.rows, defaultRowHeight, viewportHeight, scrollTop, dynamicBufferPx]
-  );
+  const visibleRows = useMemo(() => {
+    if (dataState.rows <= 0) {
+      return [];
+    }
+
+    const startY = Math.max(0, scrollTop - dynamicBufferPx);
+    const endY = scrollTop + viewportHeight + dynamicBufferPx;
+    let start = 0;
+    while (start < dataState.rows && rowOffsets[start + 1] <= startY) {
+      start += 1;
+    }
+
+    let end = start;
+    while (end < dataState.rows && rowOffsets[end] < endY) {
+      end += 1;
+    }
+
+    return Array.from({ length: Math.max(0, end - start) }, (_, index) => start + index);
+  }, [dataState.rows, dynamicBufferPx, rowOffsets, scrollTop, viewportHeight]);
 
   const visibleCols = useMemo(() => Array.from({ length: dataState.cols }, (_, index) => index), [dataState.cols]);
 
@@ -98,23 +147,28 @@ export const useGridDerivedState = (options: UseGridDerivedStateOptions): UseGri
 
   const selectionOverlayRects = useMemo(
     () =>
-      buildSelectionOverlayRects({
-        ranges: selectionRanges,
-        rowHeight: defaultRowHeight,
-        columnWidth: defaultColumnWidth,
-        rowHeaderWidth
+      selectionRanges.map((range) => {
+        const normalized = normalizeRange(range);
+        return {
+          top: rowOffsets[normalized.top] ?? 0,
+          left: rowHeaderWidth + (columnOffsets[normalized.left] ?? 0),
+          width:
+            (columnOffsets[normalized.right + 1] ?? columnOffsets[normalized.right] ?? 0) -
+            (columnOffsets[normalized.left] ?? 0),
+          height: (rowOffsets[normalized.bottom + 1] ?? rowOffsets[normalized.bottom] ?? 0) - (rowOffsets[normalized.top] ?? 0)
+        };
       }),
-    [selectionRanges, defaultRowHeight, defaultColumnWidth, rowHeaderWidth]
+    [selectionRanges, rowOffsets, rowHeaderWidth, columnOffsets]
   );
 
   const activeCellRect = useMemo(
     () => ({
-      top: activeCell.rowIndex * defaultRowHeight,
-      left: rowHeaderWidth + activeCell.colIndex * defaultColumnWidth,
-      width: defaultColumnWidth,
-      height: defaultRowHeight
+      top: rowOffsets[activeCell.rowIndex] ?? 0,
+      left: rowHeaderWidth + (columnOffsets[activeCell.colIndex] ?? 0),
+      width: columnWidthsByIndex[activeCell.colIndex] ?? defaultColumnWidth,
+      height: rowHeightsByIndex[activeCell.rowIndex] ?? defaultRowHeight
     }),
-    [activeCell, defaultRowHeight, defaultColumnWidth, rowHeaderWidth]
+    [activeCell, rowOffsets, rowHeaderWidth, columnOffsets, columnWidthsByIndex, defaultColumnWidth, rowHeightsByIndex, defaultRowHeight]
   );
 
   return {
@@ -126,6 +180,10 @@ export const useGridDerivedState = (options: UseGridDerivedStateOptions): UseGri
     selectedRowSet,
     selectedColSet,
     selectionOverlayRects,
-    activeCellRect
+    activeCellRect,
+    columnWidthsByIndex,
+    rowHeightsByIndex,
+    columnOffsets,
+    rowOffsets
   };
 };

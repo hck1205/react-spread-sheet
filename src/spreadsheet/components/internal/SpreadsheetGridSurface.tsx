@@ -45,6 +45,8 @@ export interface SpreadsheetGridSurfaceProps {
   onColumnHeaderMouseDown: (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   /** 컬럼 헤더 mouseenter 핸들러 */
   onColumnHeaderMouseEnter: (colIndex: number) => void;
+  /** 컬럼 리사이즈 핸들 mousedown */
+  onColumnResizeMouseDown: (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   /** 전체 그리드 폭(px) */
   totalGridWidth: number;
   /** 콘텐츠 폭(px) */
@@ -61,8 +63,14 @@ export interface SpreadsheetGridSurfaceProps {
   rowHeaderWidth: number;
   /** 기본 행 높이(px) */
   defaultRowHeight: number;
-  /** 기본 열 너비(px) */
-  defaultColumnWidth: number;
+  /** 컬럼 너비 목록(px) */
+  columnWidthsByIndex: number[];
+  /** 행 높이 목록(px) */
+  rowHeightsByIndex: number[];
+  /** 컬럼 시작 x 오프셋 목록(px) */
+  columnOffsets: number[];
+  /** 행 시작 y 오프셋 목록(px) */
+  rowOffsets: number[];
   /** 데이터 상태 */
   dataState: DataState;
   /** 선택된 행 집합 */
@@ -91,6 +99,8 @@ export interface SpreadsheetGridSurfaceProps {
   onRowHeaderMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   /** 행 헤더 mouseenter 핸들러 */
   onRowHeaderMouseEnter: (rowIndex: number) => void;
+  /** 행 리사이즈 핸들 mousedown */
+  onRowResizeMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -118,6 +128,7 @@ export function SpreadsheetGridSurface({
   onSelectAllMouseDown,
   onColumnHeaderMouseDown,
   onColumnHeaderMouseEnter,
+  onColumnResizeMouseDown,
   totalGridWidth,
   contentWidth,
   totalGridHeight,
@@ -126,7 +137,10 @@ export function SpreadsheetGridSurface({
   renderRowTitle,
   rowHeaderWidth,
   defaultRowHeight,
-  defaultColumnWidth,
+  columnWidthsByIndex,
+  rowHeightsByIndex,
+  columnOffsets,
+  rowOffsets,
   dataState,
   selectedRowSet,
   selectionOverlayRects,
@@ -140,7 +154,8 @@ export function SpreadsheetGridSurface({
   onEditingInputKeyDown,
   onEditingInputBlur,
   onRowHeaderMouseDown,
-  onRowHeaderMouseEnter
+  onRowHeaderMouseEnter,
+  onRowResizeMouseDown
 }: SpreadsheetGridSurfaceProps) {
   return (
     <>
@@ -152,11 +167,13 @@ export function SpreadsheetGridSurface({
           totalGridWidth={totalGridWidth}
           scrollLeft={scrollLeft}
           columnCount={dataState.cols}
-          defaultColumnWidth={defaultColumnWidth}
+          columnWidthsByIndex={columnWidthsByIndex}
+          columnOffsets={columnOffsets}
           selectedColSet={selectedColSet}
           onSelectAllMouseDown={onSelectAllMouseDown}
           onColumnHeaderMouseDown={onColumnHeaderMouseDown}
           onColumnHeaderMouseEnter={onColumnHeaderMouseEnter}
+          onColumnResizeMouseDown={onColumnResizeMouseDown}
         />
       )}
       <div
@@ -189,24 +206,25 @@ export function SpreadsheetGridSurface({
               <GridRow
                 key={`row-${rowIndex}`}
                 rowIndex={rowIndex}
+                rowTop={rowOffsets[rowIndex] ?? rowIndex * defaultRowHeight}
                 rowHeaderWidth={rowHeaderWidth}
                 renderRowTitle={renderRowTitle}
-                defaultRowHeight={defaultRowHeight}
-                defaultColumnWidth={defaultColumnWidth}
+                rowHeight={rowHeightsByIndex[rowIndex] ?? defaultRowHeight}
                 contentWidth={contentWidth}
                 visibleCols={visibleCols}
                 dataState={dataState}
                 selectedRow={selectedRowSet.has(rowIndex)}
+                columnWidthsByIndex={columnWidthsByIndex}
+                columnOffsets={columnOffsets}
                 onRowHeaderMouseDown={onRowHeaderMouseDown}
                 onRowHeaderMouseEnter={onRowHeaderMouseEnter}
+                onRowResizeMouseDown={onRowResizeMouseDown}
               />
             ))}
             {editing && (
               <EditingCellOverlay
                 editing={editing}
-                rowHeaderWidth={rowHeaderWidth}
-                defaultRowHeight={defaultRowHeight}
-                defaultColumnWidth={defaultColumnWidth}
+                rect={activeCellRect}
                 editingInputRef={editingInputRef}
                 defaultValue={editingDraftValue}
                 onChange={onEditingInputChange}

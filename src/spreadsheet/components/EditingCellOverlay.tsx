@@ -6,9 +6,7 @@ import type { EditingState } from '../types';
  */
 export interface EditingCellOverlayProps {
   editing: EditingState;
-  rowHeaderWidth: number;
-  defaultRowHeight: number;
-  defaultColumnWidth: number;
+  rect: { top: number; left: number; width: number; height: number };
   editingInputRef: React.RefObject<HTMLInputElement | null>;
   defaultValue: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -26,9 +24,7 @@ export interface EditingCellOverlayProps {
  */
 export function EditingCellOverlay({
   editing,
-  rowHeaderWidth,
-  defaultRowHeight,
-  defaultColumnWidth,
+  rect,
   editingInputRef,
   defaultValue,
   onChange,
@@ -41,10 +37,10 @@ export function EditingCellOverlay({
     <div
       style={{
         position: 'absolute',
-        top: editing.cell.rowIndex * defaultRowHeight,
-        left: rowHeaderWidth + editing.cell.colIndex * defaultColumnWidth,
-        width: defaultColumnWidth,
-        height: defaultRowHeight,
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
         zIndex: 30
       }}
     >
@@ -58,7 +54,7 @@ export function EditingCellOverlay({
           boxSizing: 'border-box',
           width: '100%',
           height: '100%',
-          lineHeight: `${defaultRowHeight - 4}px`,
+          lineHeight: `${Math.max(16, rect.height - 4)}px`,
           color: SHEET_COLOR.TEXT_PRIMARY,
           backgroundColor: SHEET_COLOR.WHITE,
           caretColor: SHEET_COLOR.ACTIVE_BLUE,

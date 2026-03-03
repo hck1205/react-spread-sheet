@@ -7,16 +7,19 @@ import { SHEET_CLASSNAME, SHEET_COLOR } from '../const';
  */
 export interface GridRowProps {
   rowIndex: number;
+  rowTop: number;
   rowHeaderWidth: number;
   renderRowTitle: boolean;
-  defaultRowHeight: number;
-  defaultColumnWidth: number;
+  rowHeight: number;
   contentWidth: number;
   visibleCols: number[];
   dataState: DataState;
   selectedRow: boolean;
+  columnWidthsByIndex: number[];
+  columnOffsets: number[];
   onRowHeaderMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   onRowHeaderMouseEnter: (rowIndex: number) => void;
+  onRowResizeMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -31,26 +34,29 @@ export interface GridRowProps {
  */
 export const GridRow = memo(function GridRow({
   rowIndex,
+  rowTop,
   rowHeaderWidth,
   renderRowTitle,
-  defaultRowHeight,
-  defaultColumnWidth,
+  rowHeight,
   contentWidth,
   visibleCols,
   dataState,
   selectedRow,
+  columnWidthsByIndex,
+  columnOffsets,
   onRowHeaderMouseDown,
-  onRowHeaderMouseEnter
+  onRowHeaderMouseEnter,
+  onRowResizeMouseDown
 }: GridRowProps) {
   return (
     <div
       style={{
         position: 'absolute',
-        top: rowIndex * defaultRowHeight,
+        top: rowTop,
         left: 0,
         display: 'flex',
         width: contentWidth,
-        height: defaultRowHeight
+        height: rowHeight
       }}
     >
       {renderRowTitle && (
@@ -64,7 +70,7 @@ export const GridRow = memo(function GridRow({
             left: 0,
             zIndex: 10,
             width: rowHeaderWidth,
-            lineHeight: `${defaultRowHeight}px`,
+            lineHeight: `${rowHeight}px`,
             cursor: 'pointer',
             color: selectedRow ? SHEET_COLOR.ACTIVE_BLUE : SHEET_COLOR.TEXT_MUTED,
             fontWeight: selectedRow ? 600 : 400,
@@ -74,9 +80,13 @@ export const GridRow = memo(function GridRow({
           }}
         >
           {rowIndex + 1}
+          <div
+            className={SHEET_CLASSNAME.ROW_RESIZE_HANDLE}
+            onMouseDown={(event) => onRowResizeMouseDown(rowIndex, event)}
+          />
         </div>
       )}
-      <div className="flex">
+      <div className="relative" style={{ width: contentWidth - rowHeaderWidth }}>
         {visibleCols.map((colIndex) => {
           const cellValue = getCellValue(dataState, { rowIndex, colIndex });
           return (
@@ -89,10 +99,11 @@ export const GridRow = memo(function GridRow({
               title={cellValue}
               draggable={false}
               style={{
-                position: 'relative',
+                position: 'absolute',
+                left: columnOffsets[colIndex] ?? 0,
                 zIndex: 1,
-                width: defaultColumnWidth,
-                height: defaultRowHeight,
+                width: columnWidthsByIndex[colIndex] ?? 120,
+                height: rowHeight,
                 whiteSpace: 'nowrap',
                 color: SHEET_COLOR.TEXT_PRIMARY,
                 borderBottomColor: SHEET_COLOR.GRID_BORDER,
@@ -100,7 +111,7 @@ export const GridRow = memo(function GridRow({
                 backgroundColor: SHEET_COLOR.WHITE
               }}
             >
-              <span className={SHEET_CLASSNAME.CELL_TEXT} style={{ lineHeight: `${defaultRowHeight}px`, textOverflow: 'ellipsis' }}>
+              <span className={SHEET_CLASSNAME.CELL_TEXT} style={{ lineHeight: `${rowHeight}px`, textOverflow: 'ellipsis' }}>
                 {cellValue}
               </span>
             </div>
