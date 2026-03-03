@@ -1,14 +1,25 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { Spreadsheet } from './Spreadsheet';
 import './styles.css';
+
+const sampleRows = [
+  ['Item', 'Q1', 'Q2', 'Q3', 'Q4'],
+  ['Revenue', '1200', '1360', '1490', '1710'],
+  ['Cost', '700', '760', '820', '900'],
+  ['Profit', '500', '600', '670', '810']
+];
 
 function DevApp() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
-      <section className="mx-auto max-w-3xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+      <section className="mx-auto max-w-6xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">react-spread-sheet</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">Hello World</h1>
-        <p className="mt-3 text-slate-600">스프레드시트 라이브러리 개발을 위한 로컬 개발 화면입니다.</p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-900">Basic Sheet Dev Screen</h1>
+        <p className="mt-3 text-slate-600">아래 시트는 현재 코어 기반으로 생성된 기본 편집 가능한 그리드입니다.</p>
+        <div className="mt-6">
+          <Spreadsheet rows={12} cols={8} initialValue={sampleRows} storage="sparse" rendererStrategy="dom-table" />
+        </div>
       </section>
     </main>
   );
