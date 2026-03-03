@@ -116,6 +116,15 @@ export const createSpreadsheetState = (options: CreateSpreadsheetStateOptions): 
 export const getCell = (dataState: DataState, coord: CellCoordinate): SpreadsheetCell => dataState.store.getCell(coord);
 
 /**
+ * 현재 데이터 저장소에서 셀 문자열 값만 읽습니다.
+ *
+ * @param dataState 데이터 상태
+ * @param coord 조회 좌표
+ * @returns 셀 문자열 값
+ */
+export const getCellValue = (dataState: DataState, coord: CellCoordinate): string => dataState.store.getCellValue(coord);
+
+/**
  * 셀 값을 기록한 새로운 데이터 상태를 반환합니다.
  *
  * @param dataState 기존 데이터 상태

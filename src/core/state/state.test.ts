@@ -4,6 +4,7 @@ import {
   createSpreadsheetState,
   createUiState,
   getCell,
+  getCellValue,
   setCell,
   setFocusedCell,
   setSelection
@@ -27,6 +28,7 @@ describe('core/state', () => {
     expect(dataState.version).toBe(0);
     expect(nextState.version).toBe(1);
     expect(getCell(nextState, coord).value).toBe('42');
+    expect(getCellValue(nextState, coord)).toBe('42');
     expect(getCell(dataState, coord).value).toBe('');
   });
 

@@ -18,6 +18,7 @@ describe('core/storage', () => {
     fetched.value = 'changed';
 
     expect(store.getCell(coord).value).toBe('hello');
+    expect(store.getCellValue(coord)).toBe('hello');
     expect(store.hasCell(coord)).toBe(true);
   });
 
@@ -30,6 +31,7 @@ describe('core/storage', () => {
 
     store.setCell(coord, EMPTY_CELL);
     expect(store.hasCell(coord)).toBe(false);
+    expect(store.getCellValue(coord)).toBe('');
     expect(store.entries()).toEqual([]);
   });
 
