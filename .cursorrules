@@ -1,0 +1,7 @@
+# Legacy Cursor rules entrypoint
+# Canonical rules are defined in: .cursor/rules/react-spreadsheet.mdc
+
+- Always follow .cursor/rules/react-spreadsheet.mdc as the source of truth.
+- Enforce Node-based component structure under src/components.
+- Keep all source code under src/ and update export chains via index.ts.
+- Require JSDoc on all public exports and keep changes atomic/scope-limited.
