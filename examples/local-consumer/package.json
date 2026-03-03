@@ -1,0 +1,14 @@
+{
+  "name": "react-spread-sheet-local-consumer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "../../node_modules/.bin/vite --host 127.0.0.1 --port 4173",
+    "build": "../../node_modules/.bin/vite build",
+    "preview": "../../node_modules/.bin/vite preview --host 127.0.0.1 --port 4173"
+  },
+  "dependencies": {
+    "@your-scope/react-spread-sheet": "file:../.."
+  }
+}
