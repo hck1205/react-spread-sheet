@@ -5,3 +5,9 @@
 - Enforce Node-based component structure under src/components.
 - Keep all source code under src/ and update export chains via index.ts.
 - Require JSDoc on all public exports and keep changes atomic/scope-limited.
+- Write JSDoc in Korean with detailed tags (`@param`, `@returns`, `@throws`, `@example` when needed).
+- Add/maintain folder-level tests for logic module changes.
+- Manage literal type candidates in `const.ts` as static constants, and derive types from those constants.
+- Prefer `const.ts` constants in runtime branch comparisons (avoid raw string literals).
+- Keep architecture docs synced when module boundaries/relations change.
+- Run `test:run -> typecheck -> build -> pack:check` before publish-related updates.
