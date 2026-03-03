@@ -11,3 +11,4 @@
 - Prefer `const.ts` constants in runtime branch comparisons (avoid raw string literals).
 - Keep architecture docs synced when module boundaries/relations change.
 - Run `test:run -> typecheck -> build -> pack:check` before publish-related updates.
+- Forbid regressions on previously completed features; every behavior fix/change must include regression tests and smoke-check results.

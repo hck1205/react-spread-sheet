@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Spreadsheet } from './Spreadsheet';
+import { SpreadSheetGrid } from './Spreadsheet';
 import './styles.css';
 
 const sampleRows = [
@@ -20,7 +20,7 @@ function DevApp() {
           row virtualization + 고정 헤더 + 스크롤 동기화가 적용된 1단계 기본 그리드입니다.
         </p>
         <div className="mt-6">
-          <Spreadsheet
+          <SpreadSheetGrid
             rows={10000}
             cols={24}
             initialValue={sampleRows}

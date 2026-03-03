@@ -8,6 +8,7 @@ export interface GridDataStore {
   readonly cols: number;
   clone(): GridDataStore;
   getCell(coord: CellCoordinate): SpreadsheetCell;
+  getCellValue(coord: CellCoordinate): string;
   setCell(coord: CellCoordinate, cell: SpreadsheetCell): void;
   hasCell(coord: CellCoordinate): boolean;
   clearCell(coord: CellCoordinate): void;
@@ -71,6 +72,16 @@ export class DenseGridStore implements GridDataStore {
     }
 
     return cloneCell(cell);
+  }
+
+  /**
+   * 좌표의 셀 문자열 값만 조회합니다.
+   *
+   * @param coord 조회 좌표
+   * @returns 셀 문자열 값. 값이 없으면 빈 문자열 반환
+   */
+  getCellValue(coord: CellCoordinate): string {
+    return this.grid[coord.rowIndex]?.[coord.colIndex]?.value ?? '';
   }
 
   /**
@@ -181,6 +192,16 @@ export class SparseGridStore implements GridDataStore {
     }
 
     return cloneCell(cell);
+  }
+
+  /**
+   * 좌표의 셀 문자열 값만 조회합니다.
+   *
+   * @param coord 조회 좌표
+   * @returns 셀 문자열 값. 값이 없으면 빈 문자열 반환
+   */
+  getCellValue(coord: CellCoordinate): string {
+    return this.cells.get(toCellKey(coord))?.value ?? '';
   }
 
   /**
