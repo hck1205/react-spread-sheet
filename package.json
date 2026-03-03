@@ -26,10 +26,12 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite --host 127.0.0.1 --port 5173",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "pack:check": "node ./scripts/verify-publish-package.mjs",
     "preview": "vite preview",
-    "prepublishOnly": "npm run typecheck && npm run build"
+    "prepublishOnly": "npm run typecheck && npm run build && npm run pack:check"
   },
   "keywords": [
     "react",
@@ -48,6 +50,9 @@
     "jotai": "^2.12.5"
   },
   "devDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@types/node": "^24.3.1",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
@@ -57,5 +62,6 @@
     "typescript": "^5.7.3",
     "vite": "^6.2.0",
     "vite-plugin-dts": "^4.5.3"
-  }
+  },
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538"
 }
