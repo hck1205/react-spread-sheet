@@ -2,6 +2,29 @@
 
 npm 배포를 전제로 한 **React 기반 Spreadsheet 라이브러리 최소 셋업**입니다.
 
+## 사용 원칙 (Public API)
+
+- 소비자는 `SpreadSheetGrid` **하나의 컴포넌트만 렌더링**하면 됩니다.
+- 내부 선택/편집/드래그 로직은 라이브러리에 캡슐화되어 있으며 사용자에게 위임하지 않습니다.
+- 기본 기능은 항상 활성화됩니다.
+  - 셀 드래그 선택
+  - 행/열 헤더 드래그 다중 선택
+  - 셀 편집(더블클릭/키보드)
+  - 좌상단 코너 클릭 전체 선택
+
+```tsx
+import { SpreadSheetGrid } from '@your-scope/react-spread-sheet';
+
+export function App() {
+  return <SpreadSheetGrid rows={1000} cols={26} />;
+}
+```
+
+```tsx
+// 렌더 섹션 제어
+<SpreadSheetGrid renderToolbar={false} renderColumnTitle={true} renderRowTitle={true} />
+```
+
 ## 포함된 스택
 
 - React (peer dependency)
@@ -35,6 +58,31 @@ npm run typecheck
 npm run build
 ```
 
+## 로컬 소비자 앱 예제 (설치 사용자 시나리오)
+
+라이브러리를 실제 설치해서 쓰는 흐름을 검증하려면 `examples/local-consumer`를 사용하세요.
+이 예제는 `@your-scope/react-spread-sheet`를 `file:../..`로 설치해 로컬 테스트에 활용합니다.
+
+```bash
+# 1) 예제 의존성 설치
+npm run example:install
+
+# 2) 예제 실행
+npm run example:dev
+```
+
+브라우저에서 `http://127.0.0.1:4173`을 열면 됩니다.
+
+라이브러리 소스 변경사항 반영 테스트:
+
+```bash
+# 라이브러리 빌드
+npm run build
+
+# 필요 시 예제에서 재설치
+npm run example:install
+```
+
 ## 배포 전 체크리스트
 
 1. `package.json`의 `name`을 실제 npm 스코프로 변경
@@ -54,4 +102,4 @@ npm publish
 - `dist/index.js` (ESM)
 - `dist/index.cjs` (CommonJS)
 - `dist/index.d.ts` (TypeScript types)
-- `dist/style.css` (Tailwind styles)
+- `dist/react-spread-sheet.css` (Tailwind styles)
