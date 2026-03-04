@@ -11,6 +11,14 @@ export const SHEET_LAYOUT = {
 } as const;
 
 /**
+ * 고정(freeze) 행/열 표시를 위한 스타일 토큰입니다.
+ */
+export const SHEET_FREEZE = {
+  BOUNDARY_BORDER_WIDTH_PX: 3,
+  BOUNDARY_BORDER_COLOR: '#3c4043'
+} as const;
+
+/**
  * 시트 스타일 토큰입니다.
  */
 export const SHEET_COLOR = {
