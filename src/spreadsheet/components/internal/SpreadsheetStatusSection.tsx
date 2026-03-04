@@ -38,6 +38,24 @@ export interface SpreadsheetStatusSectionProps {
    * 상단 상태 렌더링용 ViewModel 입니다.
    */
   statusModel: SpreadsheetStatusModel;
+  /**
+   * 현재 활성 셀의 행 인덱스(0-based)입니다.
+   *
+   * `freeze to row n` 버튼의 n 계산에 사용됩니다.
+   */
+  activeRowIndex: number;
+  /**
+   * 현재 고정(freeze)된 행 개수입니다.
+   *
+   * 값이 `3`이면 1~3행이 고정된 상태를 의미합니다.
+   */
+  freezeRows: number;
+  /**
+   * 고정 행 개수를 변경하는 콜백입니다.
+   *
+   * 인자로 전달된 값은 "고정할 마지막 행 번호(1-based)"로 해석됩니다.
+   */
+  onFreezeRowsChange: (next: number) => void;
 }
 
 /**
@@ -56,13 +74,19 @@ export function SpreadsheetStatusSection({
   cols,
   storage,
   renderToolbar,
-  statusModel
+  statusModel,
+  activeRowIndex,
+  freezeRows,
+  onFreezeRowsChange
 }: SpreadsheetStatusSectionProps) {
+  /** 버튼에서 사용하는 1-based freeze 목표 행 번호 */
+  const activeRowNumber = activeRowIndex + 1;
+
   return (
     <>
       <div className={SHEET_CLASSNAME.TOP_INFO}>
         stage-2 editable-grid: rows={rows}, cols={cols}, storage={storage}, renderer={rendererStrategy},
-        buffer={Math.round(dynamicBufferPx)}px
+        buffer={Math.round(dynamicBufferPx)}px, freezeRows={freezeRows}
       </div>
       {statusModel.hasError && statusModel.errorMessage && (
         <div
@@ -101,6 +125,11 @@ export function SpreadsheetStatusSection({
           </div>
         </div>
       )}
+      <div className="mb-2 flex items-center gap-2 text-xs">
+        <button className="rounded border px-2 py-1" onClick={() => onFreezeRowsChange(activeRowNumber)}>
+          freeze to row {activeRowNumber}
+        </button>
+      </div>
     </>
   );
 }

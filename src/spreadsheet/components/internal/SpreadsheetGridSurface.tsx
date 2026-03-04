@@ -17,6 +17,8 @@ import { SpreadsheetHeaderRow } from '../SpreadsheetHeaderRow';
 export interface SpreadsheetGridSurfaceProps {
   /** 컬럼 헤더 렌더 여부 */
   renderColumnTitle: boolean;
+  /** 현재 세로 스크롤 위치(px) */
+  scrollTop: number;
   /** 현재 가로 스크롤 위치(px) */
   scrollLeft: number;
   /** 선택된 컬럼 집합 */
@@ -71,6 +73,8 @@ export interface SpreadsheetGridSurfaceProps {
   columnOffsets: number[];
   /** 행 시작 y 오프셋 목록(px) */
   rowOffsets: number[];
+  /** 고정 행 개수 */
+  freezeRows: number;
   /** 데이터 상태 */
   dataState: DataState;
   /** 선택된 행 집합 */
@@ -114,6 +118,7 @@ export interface SpreadsheetGridSurfaceProps {
  */
 export function SpreadsheetGridSurface({
   renderColumnTitle,
+  scrollTop,
   scrollLeft,
   selectedColSet,
   viewportHeight,
@@ -141,6 +146,7 @@ export function SpreadsheetGridSurface({
   rowHeightsByIndex,
   columnOffsets,
   rowOffsets,
+  freezeRows,
   dataState,
   selectedRowSet,
   selectionOverlayRects,
@@ -157,6 +163,15 @@ export function SpreadsheetGridSurface({
   onRowHeaderMouseEnter,
   onRowResizeMouseDown
 }: SpreadsheetGridSurfaceProps) {
+  const freezeRowBoundary = rowOffsets[Math.min(freezeRows, rowOffsets.length - 1)] ?? 0;
+  const compensateOverlayRect = (rect: GridCellRect): GridCellRect => ({
+    ...rect,
+    top: rect.top < freezeRowBoundary ? rect.top + scrollTop : rect.top
+  });
+
+  const compensatedSelectionRects = selectionOverlayRects.map(compensateOverlayRect);
+  const compensatedActiveCellRect = compensateOverlayRect(activeCellRect);
+
   return (
     <>
       {renderColumnTitle && (
@@ -200,13 +215,14 @@ export function SpreadsheetGridSurface({
               height: totalGridHeight
             }}
           >
-            <SelectionOverlayLayer rects={selectionOverlayRects} />
-            <ActiveCellOverlay rect={activeCellRect} editing={Boolean(editing)} />
+            <SelectionOverlayLayer rects={compensatedSelectionRects} />
+            <ActiveCellOverlay rect={compensatedActiveCellRect} editing={Boolean(editing)} />
             {visibleRows.map((rowIndex) => (
               <GridRow
                 key={`row-${rowIndex}`}
                 rowIndex={rowIndex}
                 rowTop={rowOffsets[rowIndex] ?? rowIndex * defaultRowHeight}
+                freezeRows={freezeRows}
                 rowHeaderWidth={rowHeaderWidth}
                 renderRowTitle={renderRowTitle}
                 rowHeight={rowHeightsByIndex[rowIndex] ?? defaultRowHeight}
@@ -224,7 +240,7 @@ export function SpreadsheetGridSurface({
             {editing && (
               <EditingCellOverlay
                 editing={editing}
-                rect={activeCellRect}
+                rect={compensatedActiveCellRect}
                 editingInputRef={editingInputRef}
                 defaultValue={editingDraftValue}
                 onChange={onEditingInputChange}

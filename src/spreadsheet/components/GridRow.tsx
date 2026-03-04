@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { getCellValue, type DataState } from '../../core';
-import { SHEET_CLASSNAME, SHEET_COLOR } from '../const';
+import { SHEET_CLASSNAME, SHEET_COLOR, SHEET_FREEZE } from '../const';
 
 /**
  * `GridRow` 컴포넌트 입력 Props 입니다.
@@ -8,6 +8,7 @@ import { SHEET_CLASSNAME, SHEET_COLOR } from '../const';
 export interface GridRowProps {
   rowIndex: number;
   rowTop: number;
+  freezeRows: number;
   rowHeaderWidth: number;
   renderRowTitle: boolean;
   rowHeight: number;
@@ -35,6 +36,7 @@ export interface GridRowProps {
 export const GridRow = memo(function GridRow({
   rowIndex,
   rowTop,
+  freezeRows,
   rowHeaderWidth,
   renderRowTitle,
   rowHeight,
@@ -48,15 +50,23 @@ export const GridRow = memo(function GridRow({
   onRowHeaderMouseEnter,
   onRowResizeMouseDown
 }: GridRowProps) {
+  /** 현재 행이 freeze group 내부(고정 대상)인지 여부 */
+  const frozenRow = rowIndex < freezeRows;
+  /** freeze 경계선이 그려져야 하는 마지막 고정 행인지 여부 */
+  const freezeBoundaryRow = freezeRows > 0 && rowIndex === freezeRows - 1;
+  const freezeBoundaryBorder = `${SHEET_FREEZE.BOUNDARY_BORDER_WIDTH_PX}px solid ${SHEET_FREEZE.BOUNDARY_BORDER_COLOR}`;
+
   return (
     <div
       style={{
-        position: 'absolute',
+        position: frozenRow ? 'sticky' : 'absolute',
         top: rowTop,
         left: 0,
         display: 'flex',
         width: contentWidth,
-        height: rowHeight
+        height: rowHeight,
+        zIndex: frozenRow ? 14 : 1,
+        backgroundColor: SHEET_COLOR.WHITE
       }}
     >
       {renderRowTitle && (
@@ -74,7 +84,8 @@ export const GridRow = memo(function GridRow({
             cursor: 'pointer',
             color: selectedRow ? SHEET_COLOR.ACTIVE_BLUE : SHEET_COLOR.TEXT_MUTED,
             fontWeight: selectedRow ? 600 : 400,
-            borderBottomColor: SHEET_COLOR.HEADER_BORDER,
+            borderBottom: freezeBoundaryRow ? freezeBoundaryBorder : undefined,
+            borderBottomColor: freezeBoundaryRow ? SHEET_FREEZE.BOUNDARY_BORDER_COLOR : SHEET_COLOR.HEADER_BORDER,
             borderRightColor: SHEET_COLOR.HEADER_BORDER,
             backgroundColor: selectedRow ? SHEET_COLOR.SELECTED_BG : SHEET_COLOR.HEADER_BG
           }}
@@ -106,7 +117,8 @@ export const GridRow = memo(function GridRow({
                 height: rowHeight,
                 whiteSpace: 'nowrap',
                 color: SHEET_COLOR.TEXT_PRIMARY,
-                borderBottomColor: SHEET_COLOR.GRID_BORDER,
+                borderBottom: freezeBoundaryRow ? freezeBoundaryBorder : undefined,
+                borderBottomColor: freezeBoundaryRow ? SHEET_FREEZE.BOUNDARY_BORDER_COLOR : SHEET_COLOR.GRID_BORDER,
                 borderRightColor: SHEET_COLOR.GRID_BORDER,
                 backgroundColor: SHEET_COLOR.WHITE
               }}

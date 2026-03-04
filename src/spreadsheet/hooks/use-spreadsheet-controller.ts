@@ -29,6 +29,7 @@ export interface SpreadsheetController {
   renderColumnTitle: boolean;
   renderToolbar: boolean;
   dynamicBufferPx: number;
+  scrollTop: number;
   scrollLeft: number;
   rowHeaderWidth: number;
   totalGridWidth: number;
@@ -44,6 +45,7 @@ export interface SpreadsheetController {
   rowHeightsByIndex: number[];
   columnOffsets: number[];
   rowOffsets: number[];
+  freezeRows: number;
   formulaValue: string;
   editingDraftValue: string;
   viewportHeight: number;
@@ -65,6 +67,7 @@ export interface SpreadsheetController {
   handleRowHeaderMouseEnter: (rowIndex: number) => void;
   handleColumnResizeMouseDown: (colIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
   handleRowResizeMouseDown: (rowIndex: number, event: React.MouseEvent<HTMLDivElement>) => void;
+  handleFreezeRowsChange: (next: number) => void;
   handleEditingInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleEditingInputCompositionStart: () => void;
   handleEditingInputCompositionEnd: () => void;
@@ -123,6 +126,7 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [columnWidths, setColumnWidths] = useState<Record<number, number>>({});
   const [rowHeights, setRowHeights] = useState<Record<number, number>>({});
+  const [freezeRows, setFreezeRows] = useState(0);
   const activeCellRef = useRef<CellCoordinate>(activeCell);
   const selectionStateRef = useRef<SelectionState>(selectionState);
   const headerDragRef = useRef<{ type: 'row' | 'column'; anchorIndex: number } | null>(null);
@@ -179,6 +183,7 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     setEditing(null);
     setColumnWidths({});
     setRowHeights({});
+    setFreezeRows(0);
   }, [initialDataState]);
 
   const { scrollTop, scrollLeft, dynamicBufferPx, handleScroll } = useGridScroll({
@@ -215,7 +220,8 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     selectionRanges: selectionState.ranges,
     activeCell,
     columnWidths,
-    rowHeights
+    rowHeights,
+    freezeRows
   });
 
   const ensureCellInView = (cell: CellCoordinate) => {
@@ -804,6 +810,7 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     renderColumnTitle,
     renderToolbar,
     dynamicBufferPx,
+    scrollTop,
     scrollLeft,
     rowHeaderWidth,
     totalGridWidth,
@@ -819,6 +826,7 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     rowHeightsByIndex,
     columnOffsets,
     rowOffsets,
+    freezeRows,
     formulaValue: editing ? editingDraftRef.current : getCellValue(dataState, activeCell),
     editingDraftValue: editingDraftRef.current,
     viewportHeight,
@@ -840,6 +848,9 @@ export const useSpreadsheetController = (props: SpreadsheetProps): SpreadsheetCo
     handleRowHeaderMouseEnter,
     handleColumnResizeMouseDown,
     handleRowResizeMouseDown,
+    handleFreezeRowsChange: (next) => {
+      setFreezeRows(clamp(next, 0, dataState.rows));
+    },
     handleEditingInputChange,
     handleEditingInputCompositionStart,
     handleEditingInputCompositionEnd,

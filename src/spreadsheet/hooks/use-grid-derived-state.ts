@@ -29,6 +29,7 @@ export interface UseGridDerivedStateOptions {
   activeCell: CellCoordinate;
   columnWidths?: Record<number, number>;
   rowHeights?: Record<number, number>;
+  freezeRows?: number;
 }
 
 /**
@@ -72,7 +73,8 @@ export const useGridDerivedState = (options: UseGridDerivedStateOptions): UseGri
     selectionRanges,
     activeCell,
     columnWidths = {},
-    rowHeights = {}
+    rowHeights = {},
+    freezeRows = 0
   } = options;
 
   const columnWidthsByIndex = useMemo(
@@ -130,8 +132,14 @@ export const useGridDerivedState = (options: UseGridDerivedStateOptions): UseGri
       end += 1;
     }
 
-    return Array.from({ length: Math.max(0, end - start) }, (_, index) => start + index);
-  }, [dataState.rows, dynamicBufferPx, rowOffsets, scrollTop, viewportHeight]);
+    const baseRows = Array.from({ length: Math.max(0, end - start) }, (_, index) => start + index);
+    if (freezeRows <= 0) {
+      return baseRows;
+    }
+
+    const frozenRows = Array.from({ length: Math.min(freezeRows, dataState.rows) }, (_, index) => index);
+    return Array.from(new Set([...frozenRows, ...baseRows])).sort((a, b) => a - b);
+  }, [dataState.rows, dynamicBufferPx, freezeRows, rowOffsets, scrollTop, viewportHeight]);
 
   const visibleCols = useMemo(() => Array.from({ length: dataState.cols }, (_, index) => index), [dataState.cols]);
 

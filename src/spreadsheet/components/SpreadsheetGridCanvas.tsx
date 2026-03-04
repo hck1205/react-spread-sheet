@@ -42,10 +42,14 @@ export function SpreadSheetGrid(props: SpreadsheetProps) {
         storage={controller.dataState.storage}
         renderToolbar={controller.renderToolbar}
         statusModel={statusModel}
+        activeRowIndex={controller.activeCell.rowIndex}
+        freezeRows={controller.freezeRows}
+        onFreezeRowsChange={controller.handleFreezeRowsChange}
       />
       <div className={SHEET_CLASSNAME.ROOT}>
         <SpreadsheetGridSurface
           renderColumnTitle={controller.renderColumnTitle}
+          scrollTop={controller.scrollTop}
           scrollLeft={controller.scrollLeft}
           selectedColSet={controller.selectedColSet}
           viewportHeight={controller.viewportHeight}
@@ -73,6 +77,7 @@ export function SpreadSheetGrid(props: SpreadsheetProps) {
           rowHeightsByIndex={controller.rowHeightsByIndex}
           columnOffsets={controller.columnOffsets}
           rowOffsets={controller.rowOffsets}
+          freezeRows={controller.freezeRows}
           dataState={controller.dataState}
           selectedRowSet={controller.selectedRowSet}
           selectionOverlayRects={controller.selectionOverlayRects}
